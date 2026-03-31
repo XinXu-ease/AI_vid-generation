@@ -27,6 +27,15 @@ class DataManager {
                 console.error('❌ 加载项目数据失败：', e);
             }
         }
+        
+        // 初始化displayOrder - 如果没有则使用shotNumber
+        if (appData.project?.shots) {
+            appData.project.shots.forEach((shot, index) => {
+                if (!shot.displayOrder) {
+                    shot.displayOrder = shot.shotNumber || index + 1;
+                }
+            });
+        }
     }
 
     // 保存整个项目到 localStorage
@@ -91,6 +100,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadAllData();
     await DataManager.init(); // 加载项目数据到缓存
     setupEventListeners();
+    
+    // 恢复sidebar状态
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
+        document.getElementById('sidebar').classList.add('collapsed');
+        document.querySelector('.main-content').classList.add('sidebar-collapsed');
+    }
+    
     renderOverviewPage();
 });
 
@@ -104,6 +121,15 @@ async function loadAllData() {
         // 加载 project.json
         const projectRes = await fetch('project.json');
         appData.project = await projectRes.json();
+
+        // 初始化displayOrder - 如果没有则使用shotNumber
+        if (appData.project.shots) {
+            appData.project.shots.forEach((shot, index) => {
+                if (!shot.displayOrder) {
+                    shot.displayOrder = shot.shotNumber || index + 1;
+                }
+            });
+        }
 
         // 加载 narrative-stages.json
         try {
@@ -139,14 +165,6 @@ function setupEventListeners() {
         });
     });
 
-    // 锁定等级单选
-    const lockOptions = document.querySelectorAll('input[name="lockLevel"]');
-    lockOptions.forEach(option => {
-        option.addEventListener('change', () => {
-            console.log('锁定等级已切换为：', option.value);
-        });
-    });
-
     // 模态框按钮
     document.getElementById('continueBtn')?.addEventListener('click', closeConsistencyModal);
     document.getElementById('cancelBtn')?.addEventListener('click', closeConsistencyModal);
@@ -158,6 +176,19 @@ function setupEventListeners() {
             editToggleBtn.addEventListener('click', toggleEditMode);
         }
     }, 100);
+}
+
+// ============ Sidebar 展开/收回 ============
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+    
+    sidebar.classList.toggle('collapsed');
+    mainContent.classList.toggle('sidebar-collapsed');
+    
+    // 保存状态到localStorage
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
 }
 
 // ============ 页面切换 ============
@@ -318,7 +349,12 @@ function renderTimeline(shots) {
         // 渲染该阶段下的分镜卡片
         const updateShotsDisplay = () => {
             shotsContainerEl.innerHTML = '';
-            const currentShotsInStage = shots.filter(s => s.narrative_stage === stage.stageName);
+            let currentShotsInStage = shots.filter(s => s.narrative_stage === stage.stageName);
+            
+            // 按displayOrder排序
+            currentShotsInStage = currentShotsInStage.sort((a, b) => {
+                return (a.displayOrder || a.shotNumber) - (b.displayOrder || b.shotNumber);
+            });
             
             if (currentShotsInStage.length === 0) {
                 shotsContainerEl.innerHTML = '<p style="text-align: center; color: #999; font-size: 12px;">暂无分镜</p>';
@@ -348,15 +384,28 @@ function renderTimeline(shots) {
                     <span style="color: #999; font-size: 12px;">⋮</span>
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 12px; font-weight: 600; color: #2a2a2a;">${shot.title}</div>
-                        <div style="font-size: 11px; color: #999;">${shot.shotNumber}号分镜</div>
                     </div>
                     <div style="white-space: nowrap; font-size: 11px; color: #666;">
                         ${statusIcon} ${shot.status === 'completed' ? '已生成' : '待生成'}
                     </div>
                 `;
 
+                let isDragging = false; // 拖拽标记
+
+                // 分镜卡片点击事件 - 跳转到分镜配置
+                shotCard.addEventListener('click', (e) => {
+                    // 只在没有拖拽的情况下处理点击
+                    if (!isDragging) {
+                        appData.currentShotId = shot.shotId;
+                        console.log('跳转到分镜:', shot.shotId, shot.title);
+                        switchPage('control');
+                    }
+                    isDragging = false; // 重置标记
+                });
+
                 // 分镜卡片拖拽事件
                 shotCard.addEventListener('dragstart', (e) => {
+                    isDragging = true; // 标记正在拖拽
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('shotId', shot.shotId);
                     e.dataTransfer.setData('fromStage', stage.stageName);
@@ -375,6 +424,29 @@ function renderTimeline(shots) {
 
                 shotCard.addEventListener('dragleave', (e) => {
                     shotCard.style.background = '#fdfaf0';
+                });
+
+                // 支持分镜卡片间的排序
+                shotCard.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    shotCard.style.background = '#fdfaf0';
+                    
+                    const draggedShotId = e.dataTransfer.getData('shotId');
+                    if (draggedShotId && draggedShotId !== shot.shotId) {
+                        const draggedShot = shots.find(s => s.shotId === draggedShotId);
+                        if (draggedShot && draggedShot.narrative_stage === stage.stageName) {
+                            // 同一阶段内移动 - 交换displayOrder
+                            [draggedShot.displayOrder, shot.displayOrder] = [shot.displayOrder, draggedShot.displayOrder];
+                            
+                            // 保存到 localStorage
+                            const projectData = JSON.parse(localStorage.getItem('project_data') || '{}');
+                            projectData.shots = shots;
+                            localStorage.setItem('project_data', JSON.stringify(projectData));
+                            
+                            // 重新渲染该阶段的分镜但保持展开状态
+                            updateShotsDisplay();
+                        }
+                    }
                 });
 
                 shotsContainerEl.appendChild(shotCard);
@@ -645,7 +717,6 @@ function renderOverviewShots(shots) {
             <p class="shot-card-desc">${shot.description || '（无描述）'}</p>
             <div class="shot-card-meta">
                 <span>⏱️ ${shot.duration || '-'}</span>
-                <span>🎬 分镜${shot.shotNumber}</span>
                 <span>${statusIcon} ${statusText}</span>
             </div>
         `;
@@ -687,6 +758,7 @@ function renderAssetCards(assetType) {
         styles: '🎨'
     };
 
+    // 渲染现有资产卡片
     assets.forEach(asset => {
         const card = document.createElement('div');
         card.className = 'asset-card';
@@ -699,8 +771,8 @@ function renderAssetCards(assetType) {
                 <div class="asset-name">${asset.name}</div>
                 <div class="asset-desc">${asset.description || asset.style || ''}</div>
                 <div class="asset-action">
-                    <button class="btn-small btn-add" onclick="addAssetToShot('${asset.id}', '${assetType}')">
-                        ➕ 使用
+                    <button class="btn-small btn-add" onclick="openAssetEditModal('${asset.id}', '${assetType}')">
+                        ✎ 编辑
                     </button>
                 </div>
             </div>
@@ -708,6 +780,23 @@ function renderAssetCards(assetType) {
 
         grid.appendChild(card);
     });
+
+    // 添加"添加资产"卡片
+    const addCard = document.createElement('div');
+    addCard.className = 'asset-card asset-add-card';
+    addCard.innerHTML = `
+        <div class="asset-thumbnail asset-add-thumbnail">+</div>
+        <div class="asset-info">
+            <div class="asset-name">添加资产</div>
+            <div class="asset-desc">新增一个资产</div>
+            <div class="asset-action">
+                <button class="btn-small btn-add" onclick="openAssetEditModal(null, '${assetType}')">
+                    + 添加
+                </button>
+            </div>
+        </div>
+    `;
+    grid.appendChild(addCard);
 }
 
 function addAssetToShot(assetId, assetType) {
@@ -717,6 +806,267 @@ function addAssetToShot(assetId, assetType) {
     }
     console.log(`✅ 已将资产 ${assetId} (${assetType}) 加入到分镜 ${appData.currentShotId}`);
     alert(`✅ 已成功将此资产加入到当前分镜！`);
+}
+
+// ============ 资产编辑弹窗 ============
+let currentEditingAsset = null;
+let currentEditingAssetType = null;
+let assetTitleEditing = false;
+let isCreatingNewAsset = false;
+
+function openAssetEditModal(assetId, assetType) {
+    // 处理新增模式（assetId 为 null 或 undefined）
+    if (!assetId) {
+        openAssetCreateModal(assetType);
+        return;
+    }
+
+    // 找到资产 - 编辑模式
+    const asset = appData.assets[assetType]?.find(a => a.id === assetId);
+    if (!asset) return;
+
+    currentEditingAsset = asset;
+    currentEditingAssetType = assetType;
+    isCreatingNewAsset = false;
+    assetTitleEditing = false;
+
+    // 重置标题UI状态 - 使用CSS classes确保稳定显示
+    const titleEl = document.getElementById('assetEditTitle');
+    const titleInput = document.getElementById('assetEditTitleInput');
+    
+    // 使用CSS class管理显示/隐藏状态，移除所有inline styles
+    titleEl.classList.remove('hidden');
+    titleInput.classList.remove('editing');
+    
+    // 填充弹窗内容
+    titleEl.textContent = asset.name || '新建资产';
+    titleInput.value = asset.name || '';
+    document.getElementById('assetEditDescription').value = asset.description || '';
+
+    // 清空额外属性容器
+    const extraAttrContainer = document.getElementById('assetExtraAttributes');
+    extraAttrContainer.innerHTML = '';
+
+    // 动态加载已有的属性（除了必需的name和description）
+    const excludeKeys = ['id', 'name', 'description', 'referenceImage'];
+    for (const key in asset) {
+        if (!excludeKeys.includes(key)) {
+            const value = Array.isArray(asset[key]) ? asset[key].join(', ') : (asset[key] || '');
+            const label = getAttributeLabel(key);
+            addExtraAttributeField(extraAttrContainer, key, label, value, true);
+        }
+    }
+
+    // 显示弹窗
+    document.getElementById('assetEditModal').style.display = 'flex';
+}
+
+function openAssetCreateModal(assetType) {
+    // 新增资产模式
+    currentEditingAsset = {
+        id: 'asset_' + Date.now(),
+        name: '',
+        description: ''
+    };
+    currentEditingAssetType = assetType;
+    isCreatingNewAsset = true;
+    assetTitleEditing = false;
+
+    // 重置标题UI状态 - 使用CSS classes确保稳定显示
+    const titleEl = document.getElementById('assetEditTitle');
+    const titleInput = document.getElementById('assetEditTitleInput');
+    
+    // 使用CSS class管理显示/隐藏状态
+    titleEl.classList.remove('hidden');
+    titleInput.classList.remove('editing');
+    
+    // 填充弹窗内容 - 空白
+    titleEl.textContent = '新建' + getAssetTypeName(assetType);
+    titleInput.value = '';
+    document.getElementById('assetEditDescription').value = '';
+
+    // 清空额外属性容器
+    const extraAttrContainer = document.getElementById('assetExtraAttributes');
+    extraAttrContainer.innerHTML = '';
+
+    // 显示弹窗
+    document.getElementById('assetEditModal').style.display = 'flex';
+}
+
+function getAssetTypeName(assetType) {
+    const typeNames = {
+        'characters': '角色',
+        'scenes': '场景',
+        'props': '道具',
+        'styles': '风格'
+    };
+    return typeNames[assetType] || '资产';
+}
+
+function getAttributeLabel(key) {
+    const labelMap = {
+        'outfit': '服装配备',
+        'personality': '性格特征',
+        'style': '场景风格',
+        'lighting': '光线设置',
+        'referenceImage': '参考图片'
+    };
+    return labelMap[key] || key;
+}
+
+function editAssetTitle() {
+    if (assetTitleEditing) return;
+    
+    assetTitleEditing = true;
+    const titleEl = document.getElementById('assetEditTitle');
+    const titleInput = document.getElementById('assetEditTitleInput');
+    
+    // 使用CSS classes管理显示/隐藏，不使用inline styles
+    titleEl.classList.add('hidden');
+    titleInput.classList.add('editing');
+    titleInput.focus();
+}
+
+function saveAssetTitle() {
+    const titleInput = document.getElementById('assetEditTitleInput');
+    const titleEl = document.getElementById('assetEditTitle');
+    const newTitle = titleInput.value.trim();
+    
+    if (newTitle) {
+        titleEl.textContent = newTitle;
+    }
+    
+    // 使用CSS classes重置状态，不使用removeAttribute
+    titleEl.classList.remove('hidden');
+    titleInput.classList.remove('editing');
+    assetTitleEditing = false;
+}
+
+function addExtraAttributeField(container, key, label, value = '', hasDelete = false) {
+    const group = document.createElement('div');
+    group.className = 'form-group';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'attr-field-wrapper';
+    wrapper.dataset.key = key;
+    
+    const leftDiv = document.createElement('div');
+    leftDiv.className = 'attr-field-left';
+    
+    const labelEl = document.createElement('label');
+    labelEl.style.display = label ? 'block' : 'none';
+    labelEl.textContent = label || key;
+    
+    const textarea = document.createElement('textarea');
+    textarea.className = 'form-control';
+    textarea.rows = 2;
+    textarea.value = value;
+    textarea.dataset.key = key;
+    
+    leftDiv.appendChild(labelEl);
+    leftDiv.appendChild(textarea);
+    wrapper.appendChild(leftDiv);
+    
+    if (hasDelete) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'attr-field-remove';
+        deleteBtn.textContent = '×';
+        deleteBtn.title = '删除此属性';
+        deleteBtn.onclick = (e) => {
+            e.preventDefault();
+            group.remove();
+        };
+        wrapper.appendChild(deleteBtn);
+    }
+    
+    group.appendChild(wrapper);
+    container.appendChild(group);
+}
+
+function addAttributeField() {
+    const name = prompt('请输入属性名称（英文）：');
+    if (!name || !name.trim()) return;
+    
+    const label = prompt(`请输入属性显示名称（标签）\n默认为：${name}`);
+    const extraAttrContainer = document.getElementById('assetExtraAttributes');
+    
+    addExtraAttributeField(extraAttrContainer, name.trim(), label || name, '', true);
+}
+
+function closeAssetEditModal() {
+    document.getElementById('assetEditModal').style.display = 'none';
+    
+    // 重置标题编辑状态
+    const titleEl = document.getElementById('assetEditTitle');
+    const titleInput = document.getElementById('assetEditTitleInput');
+    titleEl.classList.remove('hidden');
+    titleInput.classList.remove('editing');
+    
+    currentEditingAsset = null;
+    currentEditingAssetType = null;
+    assetTitleEditing = false;
+}
+
+function saveAssetEdit() {
+    if (!currentEditingAsset || !currentEditingAssetType) return;
+
+    // 更新必需属性
+    const titleInput = document.getElementById('assetEditTitleInput');
+    const newName = titleInput.classList.contains('editing') ? titleInput.value : document.getElementById('assetEditTitle').textContent;
+    
+    // 检查名称 - 创建模式必须提供名称
+    if (isCreatingNewAsset && !newName.trim()) {
+        alert('❌ 请输入资产名称！');
+        return;
+    }
+    
+    currentEditingAsset.name = newName || currentEditingAsset.name;
+    currentEditingAsset.description = document.getElementById('assetEditDescription').value;
+
+    // 清除旧的额外属性
+    const excludeKeys = ['id', 'name', 'description', 'referenceImage'];
+    for (const key in currentEditingAsset) {
+        if (!excludeKeys.includes(key)) {
+            delete currentEditingAsset[key];
+        }
+    }
+
+    // 更新额外属性
+    const extraFields = document.querySelectorAll('#assetExtraAttributes [data-key]');
+    extraFields.forEach(field => {
+        const key = field.dataset.key;
+        const value = field.value.trim();
+        
+        if (value) {
+            if (key === 'outfit') {
+                currentEditingAsset.outfit = value.split(',').map(s => s.trim()).filter(s => s);
+            } else {
+                currentEditingAsset[key] = value;
+            }
+        }
+    });
+
+    // 如果是创建新资产，需要添加到数组中
+    if (isCreatingNewAsset) {
+        appData.assets[currentEditingAssetType].push(currentEditingAsset);
+    }
+
+    console.log('✅ 资产已' + (isCreatingNewAsset ? '创建' : '保存') + ':', currentEditingAsset);
+    
+    // 保存到localStorage
+    const projectData = JSON.parse(localStorage.getItem('project_data') || '{}');
+    if (!projectData.assets) {
+        projectData.assets = JSON.parse(JSON.stringify(appData.assets));
+    }
+    projectData.assets[currentEditingAssetType] = appData.assets[currentEditingAssetType];
+    localStorage.setItem('project_data', JSON.stringify(projectData));
+
+    alert('✅ 资产已成功' + (isCreatingNewAsset ? '创建' : '保存') + '！');
+    
+    // 重新渲染资产卡片
+    renderAssetCards(currentEditingAssetType);
+    
+    closeAssetEditModal();
 }
 
 // ============ 页面3：分镜结构化控制 ============
@@ -748,7 +1098,7 @@ function renderControlPage() {
     renderConfigForm();
     renderPreview();
 
-    // 更新按钮文本和样式，根据分镜状态
+    // 更新按钮文本和样式，根据编辑状态
     setTimeout(() => {
         const editToggleBtn = document.getElementById('editModeToggle');
         if (editToggleBtn && currentShot) {
@@ -758,16 +1108,14 @@ function renderControlPage() {
             
             const updatedBtn = document.getElementById('editModeToggle');
             
-            // 根据是否有版本历史来判断显示保存还是编辑
-            const hasVersions = currentShot.versions && currentShot.versions.length > 0;
-            
-            if (!hasVersions) {
-                // 无版本历史：显示保存按钮
+            // 根据编辑状态显示按钮文本
+            if (appData.editingMode) {
+                // 编辑模式：显示保存按钮
                 updatedBtn.textContent = '💾 保存';
                 updatedBtn.style.color = '#ffffff';
                 updatedBtn.style.fontWeight = 'bold';
             } else {
-                // 有版本历史：显示编辑按钮
+                // 非编辑模式：显示编辑按钮
                 updatedBtn.textContent = '✏️ 编辑';
                 updatedBtn.style.color = '#ffffff';
                 updatedBtn.style.fontWeight = 'normal';
@@ -775,7 +1123,7 @@ function renderControlPage() {
             
             // 添加新的事件监听器（只有一个）
             updatedBtn.addEventListener('click', handleSaveOrEdit);
-            console.log('按钮事件已绑定:', currentShot.shotId);
+            console.log('按钮事件已绑定:', currentShot.shotId, '编辑模式:', appData.editingMode);
         }
     }, 50);
 }
@@ -791,7 +1139,7 @@ function renderControlShotList() {
         if (shot.shotId === appData.currentShotId) {
             item.classList.add('active');
         }
-        item.textContent = `${shot.shotNumber}. ${shot.title}`;
+        item.textContent = `${shot.title}`;
         item.addEventListener('click', () => {
             appData.currentShotId = shot.shotId;
             // 重要：不要这里重置 editingMode，让 renderControlPage 来处理
@@ -810,13 +1158,13 @@ function handleSaveOrEdit() {
     const currentShot = DataManager.getShot(appData.currentShotId);
     if (!currentShot) return;
 
-    // 对于待生成分镜，点击按钮直接保存
-    if (currentShot.status === 'pending' && appData.editingMode) {
+    // 如果在编辑模式，点击保存
+    if (appData.editingMode) {
         saveChanges(currentShot);
         return;
     }
 
-    // 所有其他情况，点击按钮进入编辑模式
+    // 如果不在编辑模式，进入编辑模式
     toggleEditMode();
 }
 
@@ -830,6 +1178,17 @@ function toggleEditMode() {
     // 重新渲染表单，显示可编辑状态
     renderConfigForm();
     renderPreview();
+    
+    // 更新按钮文本 - 从编辑变成保存
+    setTimeout(() => {
+        const editToggleBtn = document.getElementById('editModeToggle');
+        if (editToggleBtn) {
+            editToggleBtn.textContent = '💾 保存';
+            editToggleBtn.style.color = '#ffffff';
+            editToggleBtn.style.fontWeight = 'bold';
+            console.log('✅ 按钮已更新为保存状态');
+        }
+    }, 0);
 }
 
 // 保存表单更改
@@ -873,17 +1232,15 @@ function saveChanges(currentShot) {
     const storageSavedShot = storageData?.shots?.find(s => s.shotId === appData.currentShotId);
     console.log('保存验证 - 从localStorage读取:', storageSavedShot?.title);
 
-    // 保持编辑状态不变（用户可以继续编辑或保存）
-    // 对于待生成分镜，保存后保持在编辑模式
-    if (currentShot.status === 'pending') {
-        appData.editingMode = true;
-    }
+    // 保存后退出编辑模式
+    appData.editingMode = false;
 
     console.log('保存完成，重新渲染...');
 
     // 刷新界面（无需弹窗，直接同步）
     renderConfigForm();
     renderPreview();
+    renderControlPage(); // 重新渲染以更新按钮状态
     renderOverviewPage(); // 刷新总览页
 }
 
@@ -894,9 +1251,8 @@ function renderConfigForm() {
     const form = document.getElementById('configForm');
     form.innerHTML = '';
 
-    // 确定是否只读
-    // 仅当shot不可编辑 且 不在编辑模式时才只读
-    const isReadonly = !appData.editingMode && currentShot.status === 'completed';
+    // 确定是否只读 - 只要不在编辑模式就禁用
+    const isReadonly = !appData.editingMode;
 
     // 分镜标题
     form.innerHTML += `
@@ -977,7 +1333,7 @@ function renderConfigForm() {
 
     // 场景绑定
     const sceneDisplay = currentShot.scenes.length > 0 
-        ? currentShot.scenes[0] 
+        ? appData.assets.scenes.find(s => s.id === currentShot.scenes[0])?.name || '选择场景...'
         : '选择场景...';
     
     form.innerHTML += `
@@ -1006,7 +1362,9 @@ function renderConfigForm() {
     `;
 
     // 风格绑定
-    const styleDisplay = currentShot.style || '选择风格...';
+    const styleDisplay = currentShot.style 
+        ? appData.assets.styles.find(s => s.id === currentShot.style)?.name || '选择风格...'
+        : '选择风格...';
     form.innerHTML += `
         <div class="form-group">
             <label class="form-label">🎨 风格绑定</label>
@@ -1069,27 +1427,6 @@ function renderConfigForm() {
         </div>
     `;
 
-    // 锁定等级
-    form.innerHTML += `
-        <div class="form-group">
-            <label class="form-label">🔒 锁定等级</label>
-            <div class="form-radio-group">
-                <label class="form-radio-item">
-                    <input type="radio" name="shotLockLevel" value="strong" checked ${isReadonly ? 'disabled' : ''}>
-                    <span>强锁定 - 完全保持不变</span>
-                </label>
-                <label class="form-radio-item">
-                    <input type="radio" name="shotLockLevel" value="medium" ${isReadonly ? 'disabled' : ''}>
-                    <span>优先保持 - 尽量保持一致</span>
-                </label>
-                <label class="form-radio-item">
-                    <input type="radio" name="shotLockLevel" value="loose" ${isReadonly ? 'disabled' : ''}>
-                    <span>可变化 - 允许调整优化</span>
-                </label>
-            </div>
-        </div>
-    `;
-
     // 生成或重生成按钮 - 只在当前分镜编辑模式时显示
     if (!isReadonly) {
         const btnText = currentShot.status === 'completed' ? '🔄 重新生成' : '🚀 生成分镜';
@@ -1114,6 +1451,26 @@ function renderConfigForm() {
         sliders.forEach(slider => {
             slider.addEventListener('input', (e) => {
                 e.target.nextElementSibling.textContent = e.target.value + '/10';
+            });
+        });
+    }, 0);
+
+    // 添加叙事阶段改变事件 - 实时保存到后端
+    setTimeout(() => {
+        const narrativeRadios = document.querySelectorAll('input[name="narrativeStage"]');
+        narrativeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (!isReadonly) {
+                    // 立即保存叙事阶段改变
+                    currentShot.narrative_stage = e.target.value;
+                    DataManager.updateShot(appData.currentShotId, {
+                        narrative_stage: e.target.value
+                    });
+                    console.log('✅ 叙事阶段已更新:', e.target.value);
+                    
+                    // 刷新关联页面
+                    renderOverviewPage();
+                }
             });
         });
     }, 0);
@@ -1269,22 +1626,6 @@ function checkConsistency(currentShot) {
     
     if (shotIndex === 0) {
         return null; // 第一个分镜不需要检测
-    }
-
-    const prevShot = shots[shotIndex - 1];
-    
-    // 如果上一分镜是强锁定且包含角色，检查当前分镜是否也包含该角色
-    if (prevShot.lockLevel === 'strong' && prevShot.characters.length > 0) {
-        const prevCharId = prevShot.characters[0];
-        const currentCharIds = currentShot.characters.map(c => c);
-        
-        // 这里是简化的检测，实际应该更复杂
-        if (prevCharId && currentShot.characters.length === 0) {
-            return {
-                message: `检测到主角连续性可能中断。上一分镜的"${getCharacterName(prevCharId)}"在当前分镜未被选中。是否继续？`,
-                severity: 'high'
-            };
-        }
     }
 
     return null;

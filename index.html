@@ -8,10 +8,17 @@
 </head>
 <body>
     <!-- 侧边栏导航 -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h1>视频工作台</h1>
-            <span class="project-title">午后的相遇</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                <div>
+                    <h1>视频工作台</h1>
+                    <span class="project-title">午后的相遇</span>
+                </div>
+                <button id="sidebarToggle" class="sidebar-toggle" onclick="toggleSidebar()">
+                    <span class="toggle-icon">◀</span>
+                </button>
+            </div>
         </div>
         <nav class="sidebar-nav">
             <button class="nav-btn active" data-page="overview">
@@ -98,26 +105,39 @@
                 <div class="assets-grid-wrapper">
                     <div id="assetsGrid" class="assets-grid"></div>
                 </div>
+            </div>
 
-                <!-- 锁定等级选择 -->
-                <div class="lock-level-panel">
-                    <h4>锁定等级设置</h4>
-                    <div class="lock-options">
-                        <label class="lock-option">
-                            <input type="radio" name="lockLevel" value="strong" checked>
-                            <span class="lock-label">🔒 强锁定</span>
-                            <span class="lock-desc">完全保持不变</span>
-                        </label>
-                        <label class="lock-option">
-                            <input type="radio" name="lockLevel" value="medium">
-                            <span class="lock-label">📌 优先保持</span>
-                            <span class="lock-desc">尽量保持一致</span>
-                        </label>
-                        <label class="lock-option">
-                            <input type="radio" name="lockLevel" value="loose">
-                            <span class="lock-label">🔓 可变化</span>
-                            <span class="lock-desc">允许调整优化</span>
-                        </label>
+            <!-- 资产编辑弹窗 -->
+            <div id="assetEditModal" class="modal" style="display: none;">
+                <div class="modal-content asset-edit-modal-content">
+                    <div class="modal-header">
+                        <h3 id="assetEditTitle" class="asset-title-editable asset-title-display" ondblclick="editAssetTitle()">资产名称</h3>
+                        <input type="text" id="assetEditTitleInput" class="asset-title-input asset-title-input-control" onblur="saveAssetTitle()" onkeydown="if(event.key==='Enter') saveAssetTitle()">
+                        <button class="modal-close" onclick="closeAssetEditModal()">&times;</button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- 说明 (必需) -->
+                        <div class="form-group">
+                            <label>说明 <span style="color: #A7C957;">*</span></label>
+                            <textarea id="assetEditDescription" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <!-- 属性列表 -->
+                        <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0ddd5;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <label style="margin: 0; font-weight: 600;">其他属性</label>
+                                <button class="btn-add-attr" onclick="addAttributeField()">+ 添加属性</button>
+                            </div>
+                            <div id="assetExtraAttributes" class="asset-extra-attributes">
+                                <!-- 动态加载额外属性 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeAssetEditModal()">关闭</button>
+                        <button class="btn btn-primary" onclick="saveAssetEdit()">保存</button>
                     </div>
                 </div>
             </div>
