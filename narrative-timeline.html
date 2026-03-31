@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分镜时间线编辑 - 午后的相遇</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #F2E8CF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6A994E 0%, #386641 100%);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-buttons button {
+            background-color: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            margin-left: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .nav-buttons button:hover {
+            background-color: rgba(255,255,255,0.3);
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 20px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+
+        /* 左侧：阶段管理 */
+        .stages-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .stages-panel h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #2a2a2a;
+        }
+
+        .stage-item {
+            background: #fdfaf0;
+            border: 1px solid #e0ddd5;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stage-item:hover {
+            background: #f5f0e8;
+            border-color: #A7C957;
+        }
+
+        .stage-handle {
+            color: #999;
+            font-size: 16px;
+            cursor: grab;
+        }
+
+        .stage-handle:active {
+            cursor: grabbing;
+        }
+
+        .stage-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stage-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2a2a2a;
+            word-break: break-all;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .stage-name:hover {
+            background-color: rgba(167, 201, 87, 0.1);
+        }
+
+        .stage-name[contenteditable="true"] {
+            background-color: white;
+            border: 1px solid #A7C957;
+            outline: none;
+        }
+
+        .stage-count {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .stage-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .stage-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .stage-btn:hover {
+            color: #A7C957;
+        }
+
+        /* 右侧：主内容区 */
+        .main-content {
+            display: grid;
+            grid-template-rows: 1fr;
+            gap: 16px;
+        }
+
+        /* 下方：分镜库和创建表单 */
+        .bottom-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .shots-library {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .shots-library h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2a2a2a;
+        }
+
+        .shot-card {
+            background: #fdfaf0;
+            border: 1px solid #e0ddd5;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.3s;
+        }
+
+        .shot-card:hover {
+            background: #f5f0e8;
+            border-color: #A7C957;
+            transform: translateX(4px);
+        }
+
+        .shot-card-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-bottom: 4px;
+        }
+
+        .shot-card-meta {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .create-shot-form {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .create-shot-form h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #2a2a2a;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e0ddd5;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #A7C957;
+            box-shadow: 0 0 0 3px rgba(167, 201, 87, 0.1);
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-create {
+            background-color: #A7C957;
+            color: white;
+        }
+
+        .btn-create:hover {
+            background-color: #95b84e;
+        }
+
+        .btn-cancel {
+            background-color: #e0ddd5;
+            color: #2a2a2a;
+        }
+
+        .btn-cancel:hover {
+            background-color: #d5d0c5;
+        }
+
+        .stats {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e0ddd5;
+        }
+
+
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-area {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">🎬 分镜时间线编辑 - 午后的相遇</div>
+        <div class="nav-buttons">
+            <button onclick="goBackToDashboard()">返回项目库</button>
+            <button onclick="goBackToControl()">返回工作台</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- 左侧：阶段管理 -->
+        <div class="stages-panel">
+            <h3>📖 叙事阶段</h3>
+            <div id="stagesList"></div>
+        </div>
+
+        <!-- 右侧：主内容 -->
+        <div class="main-content">
+            <!-- 下方：分镜库和创建表单 -->
+            <div class="bottom-area">
+                <!-- 分镜库 -->
+                <div class="shots-library">
+                    <h3>📹 分镜库</h3>
+                    <div id="shotsList"></div>
+                    <div class="stats" id="shotsStats"></div>
+                </div>
+
+                <!-- 创建新分镜 -->
+                <div class="create-shot-form">
+                    <h3>➕ 创建新分镜</h3>
+                    <form id="createShotForm">
+                        <div class="form-group">
+                            <label>分镜名称</label>
+                            <input type="text" id="shotTitle" placeholder="输入分镜标题" required>
+                        </div>
+                        <div class="form-group">
+                            <label>分镜顺序</label>
+                            <input type="number" id="shotNumber" placeholder="1" min="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>叙事阶段</label>
+                            <select id="shotStage" required>
+                                <option value="">选择阶段</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>简介</label>
+                            <textarea id="shotDesc" placeholder="输入分镜简介"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>生成状态</label>
+                            <select id="shotStatus">
+                                <option value="pending">待生成</option>
+                                <option value="completed">已生成</option>
+                            </select>
+                        </div>
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-create">创建分镜</button>
+                            <button type="reset" class="btn btn-cancel">清空</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 数据容器
+        let narrativeStages = [];
+        let allShots = [];
+        let appData = {};
+
+        // DataManager 类 - 数据管理
+        class DataManager {
+            constructor() {
+                this.loadData();
+            }
+
+            loadData() {
+                const stored = localStorage.getItem('project_data');
+                if (stored) {
+                    appData = JSON.parse(stored);
+                } else {
+                    appData = {
+                        projectId: 'proj_001',
+                        title: '午后的相遇',
+                        shots: [],
+                        narrativeStages: []
+                    };
+                }
+            }
+
+            save() {
+                appData.shots = allShots;
+                appData.narrativeStages = narrativeStages;
+                localStorage.setItem('project_data', JSON.stringify(appData));
+            }
+        }
+
+        const dataManager = new DataManager();
+
+        // 初始化
+        function init() {
+            loadData();
+            renderStagesList();
+            renderShotsList();
+            populateStageSelect();
+        }
+
+        // 加载数据
+        function loadData() {
+            allShots = appData.shots || [];
+            narrativeStages = appData.narrativeStages || [
+                { stageId: 'stage_001', stageName: '铺垫', stageOrder: 1, description: '故事背景与人物介绍' },
+                { stageId: 'stage_002', stageName: '推进', stageOrder: 2, description: '情节发展与矛盾出现' },
+                { stageId: 'stage_003', stageName: '转折', stageOrder: 3, description: '关键转折点' },
+                { stageId: 'stage_004', stageName: '高潮', stageOrder: 4, description: '情感与动作高潮' },
+                { stageId: 'stage_005', stageName: '收束', stageOrder: 5, description: '故事结局与余韵' }
+            ];
+        }
+
+        // 渲染阶段列表
+        function renderStagesList() {
+            const container = document.getElementById('stagesList');
+            container.innerHTML = narrativeStages.map((stage, idx) => {
+                const shotsInStage = allShots.filter(s => s.narrative_stage === stage.stageName);
+                return `
+                    <div class="stage-item" draggable="true" data-stage-id="${stage.stageId}">
+                        <span class="stage-handle">⋮⋮</span>
+                        <div class="stage-info">
+                            <div class="stage-name" data-stage-id="${stage.stageId}" data-stage-order="${stage.stageOrder}">阶段${stage.stageOrder} ${stage.stageName}</div>
+                            <div class="stage-count">${shotsInStage.length} 个分镜</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            addStageDragListeners();
+            addStageNameEditListeners();
+        }
+
+        // 添加阶段名称编辑监听
+        function addStageNameEditListeners() {
+            document.querySelectorAll('.stage-name').forEach(elem => {
+                elem.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const stageId = elem.dataset.stageId;
+                    const stageOrder = elem.dataset.stageOrder;
+                    const stage = narrativeStages.find(s => s.stageId === stageId);
+                    if (!stage) return;
+                    
+                    // 获取原始文本（去掉"阶段X "部分）
+                    const originalText = stage.stageName;
+                    
+                    // 设置为可编辑
+                    elem.contentEditable = 'true';
+                    elem.textContent = `阶段${stageOrder} ${originalText}`;
+                    elem.focus();
+                    
+                    // 选中文本中的阶段名部分
+                    const range = document.createRange();
+                    const start = `阶段${stageOrder} `.length;
+                    range.setStart(elem.firstChild, start);
+                    range.setEnd(elem.firstChild, elem.textContent.length);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    
+                    // 保存修改
+                    function saveStage() {
+                        const fullText = elem.textContent;
+                        const prefix = `阶段${stageOrder} `;
+                        const newName = fullText.startsWith(prefix) ? fullText.substring(prefix.length) : fullText;
+                        
+                        if (newName.trim() && newName !== originalText) {
+                            stage.stageName = newName.trim();
+                            dataManager.save();
+                        }
+                        
+                        elem.contentEditable = 'false';
+                        renderStagesList();
+                        populateStageSelect();
+                    }
+                    
+                    elem.addEventListener('blur', saveStage, { once: true });
+                    elem.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            saveStage();
+                        } else if (e.key === 'Escape') {
+                            elem.contentEditable = 'false';
+                            renderStagesList();
+                        }
+                    });
+                });
+            });
+        }
+
+        // 添加阶段拖拽监听
+        function addStageDragListeners() {
+            const stageItems = document.querySelectorAll('.stage-item');
+            let draggedItem = null;
+
+            stageItems.forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItem = item;
+                    item.style.opacity = '0.5';
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    item.style.opacity = '1';
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (draggedItem !== item) {
+                        const draggedId = draggedItem.dataset.stageId;
+                        const targetId = item.dataset.stageId;
+                        
+                        const draggedStage = narrativeStages.find(s => s.stageId === draggedId);
+                        const targetStage = narrativeStages.find(s => s.stageId === targetId);
+                        
+                        if (draggedStage && targetStage) {
+                            [draggedStage.stageOrder, targetStage.stageOrder] = 
+                            [targetStage.stageOrder, draggedStage.stageOrder];
+                            narrativeStages.sort((a, b) => a.stageOrder - b.stageOrder);
+                            dataManager.save();
+                            renderStagesList();
+                        }
+                    }
+                });
+            });
+        }
+
+
+
+        // 渲染分镜库
+        function renderShotsList() {
+            const container = document.getElementById('shotsList');
+            container.innerHTML = allShots.map(shot => `
+                <div class="shot-card" draggable="true" data-shot-id="${shot.shotId}">
+                    <div class="shot-card-title">${shot.shotNumber}. ${shot.title}</div>
+                    <div class="shot-card-meta">
+                        阶段: ${shot.narrative_stage || '未分配'} | 
+                        ${shot.status === 'completed' ? '✓ 已生成' : '⏳ 待生成'}
+                    </div>
+                </div>
+            `).join('');
+
+            // 更新统计
+            const stats = document.getElementById('shotsStats');
+            const generatedCount = allShots.filter(s => s.status === 'completed').length;
+            stats.textContent = `总计: ${allShots.length} | 已生成: ${generatedCount}`;
+        }
+
+        // 填充阶段选择
+        function populateStageSelect() {
+            const select = document.getElementById('shotStage');
+            select.innerHTML = '<option value="">选择阶段</option>' + narrativeStages.map(stage => 
+                `<option value="${stage.stageName}">${stage.stageName}</option>`
+            ).join('');
+        }
+
+        // 编辑阶段
+        function editStage(stageId) {
+            const stage = narrativeStages.find(s => s.stageId === stageId);
+            if (!stage) return;
+            
+            const newName = prompt('输入新的阶段名称:', stage.stageName);
+            if (newName && newName.trim()) {
+                stage.stageName = newName.trim();
+                dataManager.save();
+                renderStagesList();
+                populateStageSelect();
+            }
+        }
+
+        // 创建新分镜
+        document.getElementById('createShotForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // 生成新的 shotId
+            const maxNum = allShots.length > 0 
+                ? Math.max(...allShots.map(s => parseInt(s.shotId.split('_')[1]))) 
+                : 0;
+            
+            const newShot = {
+                shotId: 'shot_' + String(maxNum + 1).padStart(3, '0'),
+                shotNumber: parseInt(document.getElementById('shotNumber').value),
+                title: document.getElementById('shotTitle').value,
+                narrative_stage: document.getElementById('shotStage').value,
+                description: document.getElementById('shotDesc').value,
+                isGenerated: document.getElementById('shotStatus').value === 'completed',
+                status: document.getElementById('shotStatus').value,
+                editable: true,
+                versions: [],
+                lastModified: new Date().toISOString(),
+                characters: [],
+                scenes: [],
+                props: [],
+                style: '',
+                emotionalIntensity: 5,
+                rhythmIntensity: 5,
+                cameraMotion: '静态',
+                refPrevShot: false,
+                generatedContent: null
+            };
+            
+            allShots.push(newShot);
+            allShots.sort((a, b) => a.shotNumber - b.shotNumber);
+            dataManager.save();
+            renderShotsList();
+            renderStagesList();
+            document.getElementById('createShotForm').reset();
+            alert('✓ 分镜创建成功！');
+        });
+
+        // 导航
+        function goBackToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        function goBackToControl() {
+            window.location.href = 'index.html';
+        }
+
+        // 初始化
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

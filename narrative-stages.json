@@ -1,0 +1,35 @@
+{
+  "projectId": "short_drama_001",
+  "stages": [
+    {
+      "stageId": "stage_001",
+      "stageName": "铺垫",
+      "stageOrder": 1,
+      "description": "故事背景和人物介绍"
+    },
+    {
+      "stageId": "stage_002",
+      "stageName": "推进",
+      "stageOrder": 2,
+      "description": "情节逐步发展"
+    },
+    {
+      "stageId": "stage_003",
+      "stageName": "转折",
+      "stageOrder": 3,
+      "description": "节奏加快，矛盾升级"
+    },
+    {
+      "stageId": "stage_004",
+      "stageName": "高潮",
+      "stageOrder": 4,
+      "description": "故事达到顶峰"
+    },
+    {
+      "stageId": "stage_005",
+      "stageName": "收束",
+      "stageOrder": 5,
+      "description": "故事落幕和结局"
+    }
+  ]
+}

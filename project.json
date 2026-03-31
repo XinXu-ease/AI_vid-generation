@@ -1,0 +1,122 @@
+{
+  "projectId": "short_drama_001",
+  "title": "午后的相遇",
+  "summary": "一个关于遗憾、错过与重逢的微型故事。在一个寻常的午后，两个错过彼此的人在咖啡馆相遇，却在最后一刻再次错过。但故事没有结束——在雨夜的对峙之后，真相终于浮现。",
+  "genre": "爱情/治愈",
+  "duration": "5分钟",
+  "episodeCount": 5,
+  "shots": [
+    {
+      "shotId": "shot_001",
+      "shotNumber": 1,
+      "title": "咖啡馆初遇",
+      "description": "一个安静的下午，一个女生(林晓雨，20岁，黑长直发，穿着米色毛衣)独自坐在温暖的咖啡馆角落，端着咖啡杯，眼神迷离地望向窗外。",
+      "narrative_stage": "铺垫",
+      "characters": ["char_a"],
+      "scenes": ["scene_cafe"],
+      "props": ["prop_coffee", "prop_notebook"],
+      "style": "style_warm",
+      "emotionalIntensity": 3,
+      "rhythmIntensity": 2,
+      "cameraMotion": "静态",
+      "refPrevShot": false,
+      "isGenerated": true,
+      "status": "completed",
+      "versions": [
+        {
+          "version": "v1.0",
+          "status": "generated",
+          "timestamp": "2026-03-29T10:30:00Z"
+        }
+      ],
+      "editable": true,
+      "lastModified": "2026-03-29T10:30:00Z"
+    },
+    {
+      "shotId": "shot_002",
+      "shotNumber": 2,
+      "title": "走出咖啡馆",
+      "description": "一个年轻男生(徐晗，22岁，黑色短发，穿着卡其色外套)推开咖啡馆大门走出来。两人在门口的一瞬间四目相对。",
+      "narrative_stage": "推进",
+      "characters": ["char_a", "char_b"],
+      "scenes": ["scene_cafe", "scene_cafe_out"],
+      "props": ["prop_scarf"],
+      "style": "style_warm",
+      "emotionalIntensity": 4,
+      "rhythmIntensity": 5,
+      "cameraMotion": "缓动",
+      "refPrevShot": true,
+      "isGenerated": true,
+      "status": "completed",
+      "versions": [
+        {
+          "version": "v1.0",
+          "status": "generated",
+          "timestamp": "2026-03-29T11:00:00Z"
+        }
+      ],
+      "editable": true,
+      "lastModified": "2026-03-29T11:00:00Z"
+    },
+    {
+      "shotId": "shot_003",
+      "shotNumber": 3,
+      "title": "雨夜争执",
+      "description": "夜晚下雨的城市街道。两个年轻人在雨中相遇。男生快速走向女生，女生转身要离开。",
+      "narrative_stage": "转折",
+      "characters": ["char_a", "char_b"],
+      "scenes": ["scene_rain"],
+      "props": ["prop_umbrella", "prop_scarf"],
+      "style": "style_cinematic",
+      "emotionalIntensity": 8,
+      "rhythmIntensity": 7,
+      "cameraMotion": "强运动",
+      "refPrevShot": false,
+      "isGenerated": false,
+      "status": "pending",
+      "versions": [],
+      "editable": true,
+      "lastModified": "2026-03-29T11:30:00Z"
+    },
+    {
+      "shotId": "shot_004",
+      "shotNumber": 4,
+      "title": "回忆闪回 - 校园秋日",
+      "description": "画面切回一年前。晴朗的秋日校园里，年轻的林晓雨和徐晗坐在宿舍楼前的长椅上。徐晗正在给林晓雨讲述某个有趣的故事，林晓雨盘腿坐着，手里拿着红色围巾，脸上是最温暖的笑容。隔壁的同学正在弹吉他，远处传来欢笑声。两人年轻、无忧，充满对未来的憧憬。这一刻被金色的阳光笼罩，定格在时间里。",
+      "narrative_stage": "高潮",
+      "characters": ["char_a", "char_b"],
+      "scenes": ["scene_campus"],
+      "props": ["prop_scarf", "prop_notebook"],
+      "style": "style_warm",
+      "emotionalIntensity": 9,
+      "rhythmIntensity": 3,
+      "cameraMotion": "推近",
+      "refPrevShot": true,
+      "isGenerated": false,
+      "status": "pending",
+      "versions": [],
+      "editable": true,
+      "lastModified": "2026-03-30T00:00:00Z"
+    },
+    {
+      "shotId": "shot_005",
+      "shotNumber": 5,
+      "title": "街头告别与新开始",
+      "description": "雨停了。街道被夜色笼罩，积水反射着路灯的光芒。徐晗和林晓雨肩靠着肩，共撑一把黑伞。两人不再说话，只是默默地走向不同的人生方向。但这一次，他们彼此看见了对方。她终于收到了那封被时间耽搁的信。他终于看清了那张日思夜想的脸。在城市的夜幕中，告别不再是永远的遗憾，而成为了一场温和的和解。新的故事，从这个雨夜开始。",
+      "narrative_stage": "收束",
+      "characters": ["char_a", "char_b"],
+      "scenes": ["scene_rain", "scene_cafe_out"],
+      "props": ["prop_umbrella", "prop_scarf"],
+      "style": "style_cinematic",
+      "emotionalIntensity": 8,
+      "rhythmIntensity": 4,
+      "cameraMotion": "缓动拉远",
+      "refPrevShot": false,
+      "isGenerated": false,
+      "status": "pending",
+      "versions": [],
+      "editable": true,
+      "lastModified": "2026-03-30T00:00:00Z"
+    }
+  ]
+}

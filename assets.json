@@ -1,0 +1,101 @@
+{
+  "characters": [
+    {
+      "id": "char_a",
+      "name": "林晓雨",
+      "description": "20岁女生，黑长直发，温柔文艺气质，日系校园感",
+      "outfit": ["校服", "米色毛衣", "黑色长裙"],
+      "referenceImage": "/images/char_a.png",
+      "personality": "内向敏感，有温度"
+    },
+    {
+      "id": "char_b",
+      "name": "徐晗",
+      "description": "22岁男生，黑色短发，温和阳光，高个子",
+      "outfit": ["校服", "卡其色外套", "黑色牛仔裤"],
+      "referenceImage": "/images/char_b.png",
+      "personality": "阳光热情，主动关切"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_cafe",
+      "name": "咖啡馆内景",
+      "description": "温暖治愈的独立咖啡馆，午后阳光透过玻璃窗洒进来",
+      "style": "暖色电影感",
+      "lighting": "午后柔光"
+    },
+    {
+      "id": "scene_cafe_out",
+      "name": "咖啡馆外景",
+      "description": "城市街道，傍晚时分，路灯亮起",
+      "style": "暖色电影感",
+      "lighting": "黄昏光"
+    },
+    {
+      "id": "scene_rain",
+      "name": "雨夜街道",
+      "description": "城市街头，夜晚下雨，灯光模糊，气氛沉重",
+      "style": "冷色调写实",
+      "lighting": "夜景细雨"
+    },
+    {
+      "id": "scene_room",
+      "name": "宿舍房间",
+      "description": "简洁的大学宿舍，床、书桌、温暖的台灯",
+      "style": "温暖日系",
+      "lighting": "台灯黄光"
+    },
+    {
+      "id": "scene_street",
+      "name": "校园街道",
+      "description": "校园林荫小道，秋日氛围，树叶飘落",
+      "style": "日系写实",
+      "lighting": "自然光"
+    }
+  ],
+  "props": [
+    {
+      "id": "prop_coffee",
+      "name": "咖啡杯",
+      "description": "白色陶瓷咖啡杯，冒热气"
+    },
+    {
+      "id": "prop_scarf",
+      "name": "红色围巾",
+      "description": "羊毛绒红色围巾"
+    },
+    {
+      "id": "prop_notebook",
+      "name": "手账本",
+      "description": "淡蓝色文艺手账本，有笔"
+    },
+    {
+      "id": "prop_umbrella",
+      "name": "黑色雨伞",
+      "description": "普通黑色折伞"
+    },
+    {
+      "id": "prop_letter",
+      "name": "信件",
+      "description": "手写信件，泛黄信纸"
+    }
+  ],
+  "styles": [
+    {
+      "id": "style_jp",
+      "name": "日系写实",
+      "description": "清新唯美，细节质感，胶片感"
+    },
+    {
+      "id": "style_warm",
+      "name": "暖色电影感",
+      "description": "治愈温暖，午后光感，情感化"
+    },
+    {
+      "id": "style_cinematic",
+      "name": "冷色调写实",
+      "description": "电影质感，高级冷调，戏剧张力"
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 视频生成控制工作台</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 侧边栏导航 -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>视频工作台</h1>
+            <span class="project-title">午后的相遇</span>
+        </div>
+        <nav class="sidebar-nav">
+            <button class="nav-btn active" data-page="overview">
+                <span class="nav-icon">📋</span>
+                <span>项目总览</span>
+            </button>
+            <button class="nav-btn" data-page="assets">
+                <span class="nav-icon">🎬</span>
+                <span>固定资产库</span>
+            </button>
+            <button class="nav-btn" data-page="control">
+                <span class="nav-icon">⚙️</span>
+                <span>分镜生成</span>
+            </button>
+        </nav>
+        <div style="padding: 16px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">
+            <button onclick="window.location.href='dashboard.html'" style="width: 100%; padding: 10px 16px; background-color: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                <span style="margin-right: 8px;">📚</span>返回项目库
+            </button>
+        </div>
+        <div class="sidebar-footer">
+            <span class="version">v1.0 Demo</span>
+        </div>
+    </aside>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <!-- 页面1：项目总览 -->
+        <section id="overview-page" class="page active">
+            <div class="page-header">
+                <h2>项目总览 / 剧集工作台</h2>
+                <p class="subtitle">完整的分镜配置与状态管理</p>
+            </div>
+
+            <div class="overview-container">
+                <!-- 剧集信息卡 -->
+                <div class="episode-info-card">
+                    <div class="episode-header">
+                        <h3 id="episodeTitle">午后的相遇</h3>
+                        <span class="episode-meta">5分钟 | 爱情/治愈</span>
+                    </div>
+                    <p id="episodeSummary" class="episode-summary"></p>
+                    <div class="episode-stats">
+                        <div class="stat">
+                            <span class="stat-label">总分镜数</span>
+                            <span class="stat-value" id="totalShots">5</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">已生成</span>
+                            <span class="stat-value" id="completedShots">5</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">完成度</span>
+                            <span class="stat-value" id="completionRate">100%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分镜时间线 -->
+                <div class="timeline-section">
+                    <h3>分镜时间线</h3>
+                    <div class="timeline" id="overviewTimeline"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面2：固定资产库 -->
+        <section id="assets-page" class="page">
+            <div class="page-header">
+                <h2>固定资产库</h2>
+                <p class="subtitle">角色、场景、道具、风格的统一管理</p>
+            </div>
+
+            <div class="assets-container">
+                <!-- 资产分类标签页 -->
+                <div class="assets-tabs">
+                    <button class="asset-tab active" data-asset-type="characters">👤 角色</button>
+                    <button class="asset-tab" data-asset-type="scenes">🏞️ 场景</button>
+                    <button class="asset-tab" data-asset-type="props">🎁 道具</button>
+                    <button class="asset-tab" data-asset-type="styles">🎨 风格</button>
+                </div>
+
+                <!-- 资产卡片容器 -->
+                <div class="assets-grid-wrapper">
+                    <div id="assetsGrid" class="assets-grid"></div>
+                </div>
+
+                <!-- 锁定等级选择 -->
+                <div class="lock-level-panel">
+                    <h4>锁定等级设置</h4>
+                    <div class="lock-options">
+                        <label class="lock-option">
+                            <input type="radio" name="lockLevel" value="strong" checked>
+                            <span class="lock-label">🔒 强锁定</span>
+                            <span class="lock-desc">完全保持不变</span>
+                        </label>
+                        <label class="lock-option">
+                            <input type="radio" name="lockLevel" value="medium">
+                            <span class="lock-label">📌 优先保持</span>
+                            <span class="lock-desc">尽量保持一致</span>
+                        </label>
+                        <label class="lock-option">
+                            <input type="radio" name="lockLevel" value="loose">
+                            <span class="lock-label">🔓 可变化</span>
+                            <span class="lock-desc">允许调整优化</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 页面3：分镜结构化控制 -->
+        <section id="control-page" class="page">
+            <div class="page-header">
+                <h2>分镜生成</h2>
+                <p class="subtitle">核心编辑界面</p>
+            </div>
+
+            <div class="control-layout">
+                <!-- 左侧：分镜列表 -->
+                <div class="control-left">
+                    <h3>分镜列表</h3>
+                    <div id="controlShotList" class="shot-list"></div>
+                </div>
+
+                <!-- 中间：配置表单 -->
+                <div class="control-middle">
+                    <div class="form-header">
+                        <h3>分镜配置</h3>
+                        <button id="editModeToggle" class="btn-edit-toggle">✏️ 编辑</button>
+                    </div>
+                    <div id="configForm" class="config-form">
+                        <!-- 动态加载表单内容 -->
+                    </div>
+                </div>
+
+                <!-- 右侧：预览区 -->
+                <div class="control-right">
+                    <div class="preview-section">
+                        <h3>生成预览</h3>
+                        <div id="previewArea" class="preview-area">
+                            <div class="preview-placeholder">选择分镜查看预览</div>
+                        </div>
+                        <button id="generateBtn" class="btn-generate" style="display:none;">
+                            🚀 生成分镜
+                        </button>
+                    </div>
+
+                    <!-- 版本历史 -->
+                    <div class="history-section">
+                        <h3>版本历史</h3>
+                        <div id="versionHistory" class="version-history">
+                            <p class="placeholder-text">暂无版本</p>
+                        </div>
+                        <button id="regenBtn" class="btn-regen" style="display:none;">
+                            🔄 局部重生成
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 模态框：一致性提醒 -->
+    <div id="consistencyModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>⚠️ 连续性检查</h3>
+            <p id="consistencyMessage"></p>
+            <div class="modal-actions">
+                <button id="continueBtn" class="btn btn-primary">继续</button>
+                <button id="cancelBtn" class="btn btn-secondary">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框：生成加载 -->
+    <div id="loadingModal" class="modal" style="display:none;">
+        <div class="modal-content loading-modal">
+            <div class="spinner"></div>
+            <p>AI 正在生成分镜...</p>
+            <span class="loading-subtitle">这通常需要 30-60 秒</span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
