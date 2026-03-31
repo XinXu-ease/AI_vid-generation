@@ -347,7 +347,7 @@ function renderTimeline(shots) {
             
             // 展开时添加阴影，折叠时移除
             if (!isExpanded) {
-                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                stageEl.style.boxShadow = '0 2px 8px rgba(167, 201, 87, 0.35)';
             } else {
                 stageEl.style.boxShadow = 'none';
             }
@@ -531,7 +531,7 @@ function renderTimeline(shots) {
                             const stageEl = document.querySelector(`.timeline-stage-item[data-stage-id="${stageId}"]`);
                             if (stageEl) {
                                 stageEl.dataset.isExpanded = 'true';
-                                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                                stageEl.style.boxShadow = '0 2px 8px rgba(167, 201, 87, 0.35)';
                                 const shotsContainer = stageEl.nextElementSibling;
                                 if (shotsContainer && shotsContainer.classList.contains('stage-shots-container')) {
                                     shotsContainer.style.display = 'flex';
@@ -595,7 +595,7 @@ function renderTimeline(shots) {
                             const stageEl = document.querySelector(`.timeline-stage-item[data-stage-id="${stageId}"]`);
                             if (stageEl) {
                                 stageEl.dataset.isExpanded = 'true';
-                                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                                stageEl.style.boxShadow = '0 2px 8px rgba(167, 201, 87, 0.35)';
                                 const shotsContainer = stageEl.nextElementSibling;
                                 if (shotsContainer && shotsContainer.classList.contains('stage-shots-container')) {
                                     shotsContainer.style.display = 'flex';
