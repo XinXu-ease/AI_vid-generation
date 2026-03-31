@@ -344,6 +344,13 @@ function renderTimeline(shots) {
             stageEl.dataset.isExpanded = !isExpanded;
             shotsContainerEl.style.display = !isExpanded ? 'flex' : 'none';
             toggleBtn.style.transform = !isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+            
+            // 展开时添加阴影，折叠时移除
+            if (!isExpanded) {
+                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+            } else {
+                stageEl.style.boxShadow = 'none';
+            }
         });
 
         // 渲染该阶段下的分镜卡片
@@ -524,6 +531,7 @@ function renderTimeline(shots) {
                             const stageEl = document.querySelector(`.timeline-stage-item[data-stage-id="${stageId}"]`);
                             if (stageEl) {
                                 stageEl.dataset.isExpanded = 'true';
+                                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                                 const shotsContainer = stageEl.nextElementSibling;
                                 if (shotsContainer && shotsContainer.classList.contains('stage-shots-container')) {
                                     shotsContainer.style.display = 'flex';
@@ -587,6 +595,7 @@ function renderTimeline(shots) {
                             const stageEl = document.querySelector(`.timeline-stage-item[data-stage-id="${stageId}"]`);
                             if (stageEl) {
                                 stageEl.dataset.isExpanded = 'true';
+                                stageEl.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
                                 const shotsContainer = stageEl.nextElementSibling;
                                 if (shotsContainer && shotsContainer.classList.contains('stage-shots-container')) {
                                     shotsContainer.style.display = 'flex';
@@ -993,6 +1002,45 @@ function addAttributeField() {
     addExtraAttributeField(extraAttrContainer, name.trim(), label || name, '', true);
 }
 
+function deleteAsset() {
+    // 检查是否在编辑模式
+    if (!currentEditingAsset || !currentEditingAssetType) {
+        alert('❌ 无法删除：未选中资产');
+        return;
+    }
+
+    // 确认删除
+    const assetName = currentEditingAsset.name || '未命名资产';
+    const confirmed = confirm(`确定要删除"${assetName}"吗？\n\n此操作不可撤销！`);
+    if (!confirmed) return;
+
+    const assetId = currentEditingAsset.id;
+    
+    // 从资产列表中删除
+    const assetsList = appData.assets[currentEditingAssetType];
+    const indexOf = assetsList.findIndex(a => a.id === assetId);
+    if (indexOf > -1) {
+        assetsList.splice(indexOf, 1);
+    }
+
+    console.log('✅ 资产已删除:', assetId, assetName);
+
+    // 保存到localStorage
+    const projectData = JSON.parse(localStorage.getItem('project_data') || '{}');
+    projectData.assets = appData.assets;
+    localStorage.setItem('project_data', JSON.stringify(projectData));
+
+    console.log('💾 删除已保存到localStorage');
+
+    // 关闭弹窗
+    closeAssetEditModal();
+
+    // 重新渲染资产卡片
+    renderAssetCards(currentEditingAssetType);
+    
+    alert(`✅ "${assetName}"已成功删除！`);
+}
+
 function closeAssetEditModal() {
     document.getElementById('assetEditModal').style.display = 'none';
     
@@ -1147,6 +1195,63 @@ function renderControlShotList() {
         });
         shotList.appendChild(item);
     });
+
+    // 添加新分镜按钮
+    const addBtn = document.createElement('button');
+    addBtn.className = 'shot-list-item shot-list-add-btn';
+    addBtn.textContent = '➕ 添加新分镜';
+    addBtn.addEventListener('click', addNewShot);
+    shotList.appendChild(addBtn);
+}
+
+// ============ 添加新分镜 ============
+
+/**
+ * 创建并添加新分镜
+ */
+function addNewShot() {
+    const shots = DataManager.getAllShots();
+    
+    // 生成新的 shotId 和 shotNumber
+    const maxShotNumber = Math.max(...shots.map(s => s.shotNumber || 0), 0);
+    const newShotNumber = maxShotNumber + 1;
+    const newShotId = `shot_${String(newShotNumber).padStart(3, '0')}`;
+    
+    // 创建新分镜对象
+    const newShot = {
+        shotId: newShotId,
+        shotNumber: newShotNumber,
+        title: `新分镜 #${newShotNumber}`,
+        description: '',
+        narrative_stage: '推进',
+        characters: [],
+        scenes: [],
+        props: [],
+        style: '',
+        emotionalIntensity: 5,
+        rhythmIntensity: 5,
+        cameraMotion: '静态',
+        refPrevShot: false,
+        isGenerated: false,
+        status: 'pending',
+        versions: [],
+        editable: true,
+        lastModified: new Date().toISOString()
+    };
+    
+    // 添加到项目中
+    appData.project.shots.push(newShot);
+    DataManager.save();
+    
+    // 切换到新分镜并进入编辑模式
+    appData.currentShotId = newShotId;
+    appData.editingMode = true;
+    
+    console.log('✅ 新分镜已创建：', newShotId);
+    
+    // 重新渲染所有页面
+    renderOverviewPage();
+    renderControlPage();
 }
 
 // ============ 编辑模式切换 ============
@@ -1197,16 +1302,37 @@ function saveChanges(currentShot) {
     const form = document.getElementById('configForm');
     
     // 获取所有输入字段值
-    const titleInput = form.querySelector('input[type="text"]');
+    const titleInput = form.querySelector('input[type="text"][class="form-input"]');
     const descriptionTextarea = form.querySelector('textarea');
     const narrativeRadios = form.querySelectorAll('input[name="narrativeStage"]');
     const emotionalSlider = form.querySelectorAll('input[type="range"]')[0];
     const rhythmSlider = form.querySelectorAll('input[type="range"]')[1];
     const cameraMotionRadios = form.querySelectorAll('input[name="cameraMotion"]');
-    const refCheckbox = form.querySelector('input[name="refCheckbox"]');
+    const refCheckbox = form.querySelector('input[name="refPrevShotCheckbox"]');
+    
+    // 获取场景、道具、风格等关联数据
+    const scenesCheckboxes = form.querySelectorAll('input[name="scenesCheckbox"]');
+    const styleSelect = form.querySelector('select[name="styleSelect"]');
+    const propsCheckboxes = form.querySelectorAll('input[name="propsCheckbox"]');
+    const charactersCheckboxes = form.querySelectorAll('input[name="charactersCheckbox"]');
 
     console.log('=== 开始保存 ===');
     console.log('当前分镜ID:', appData.currentShotId);
+
+    // 收集选中的场景ID
+    const selectedScenes = Array.from(scenesCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+    
+    // 收集选中的道具ID
+    const selectedProps = Array.from(propsCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+    
+    // 收集选中的角色ID
+    const selectedCharacters = Array.from(charactersCheckboxes)
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
 
     const updates = {
         title: titleInput?.value?.trim() || currentShot.title,
@@ -1215,7 +1341,12 @@ function saveChanges(currentShot) {
         emotionalIntensity: parseInt(emotionalSlider?.value) || currentShot.emotionalIntensity,
         rhythmIntensity: parseInt(rhythmSlider?.value) || currentShot.rhythmIntensity,
         cameraMotion: Array.from(cameraMotionRadios).find(r => r.checked)?.value || currentShot.cameraMotion,
-        refPrevShot: refCheckbox?.checked || currentShot.refPrevShot
+        refPrevShot: refCheckbox?.checked || currentShot.refPrevShot,
+        // 新增：场景、风格、道具、角色
+        scenes: selectedScenes.length > 0 ? selectedScenes : currentShot.scenes,
+        style: styleSelect?.value || currentShot.style || '',
+        props: selectedProps.length > 0 ? selectedProps : currentShot.props,
+        characters: selectedCharacters.length > 0 ? selectedCharacters : currentShot.characters
     };
 
     console.log('保存数据:', updates);
@@ -1226,6 +1357,7 @@ function saveChanges(currentShot) {
     // 验证数据是否真的保存了
     const savedShot = DataManager.getShot(appData.currentShotId);
     console.log('保存验证 - 从内存读取:', savedShot.title);
+    console.log('保存验证 - 角色:', savedShot.characters, '场景:', savedShot.scenes, '风格:', savedShot.style, '道具:', savedShot.props);
     
     // 检查 localStorage
     const storageData = JSON.parse(localStorage.getItem(DataManager.STORAGE_KEY));
@@ -1324,25 +1456,29 @@ function renderConfigForm() {
     form.innerHTML += `
         <div class="form-group">
             <label class="form-label">👤 角色绑定</label>
-            <input type="text" class="form-input" value="${charactersDisplay}" disabled>
-            <button class="btn btn-secondary btn-small" 
-                    ${isReadonly ? 'disabled' : ''} 
-                    onclick="alert('点击打开角色选择面板')">选择角色</button>
+            <div class="form-checkbox-group">
+                ${appData.assets.characters.map((char, i) => `
+                    <label class="form-checkbox-item">
+                        <input type="checkbox" name="charactersCheckbox" value="${char.id}" data-char-id="${char.id}" ${currentShot.characters.includes(char.id) ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
+                        <span>${char.name}</span>
+                    </label>
+                `).join('')}
+            </div>
         </div>
     `;
 
     // 场景绑定
-    const sceneDisplay = currentShot.scenes.length > 0 
-        ? appData.assets.scenes.find(s => s.id === currentShot.scenes[0])?.name || '选择场景...'
-        : '选择场景...';
-    
     form.innerHTML += `
         <div class="form-group">
             <label class="form-label">🏞️ 场景绑定</label>
-            <select class="form-select" ${isReadonly ? 'disabled' : ''}>
-                <option>${sceneDisplay}</option>
-                ${appData.assets.scenes.filter(s => !currentShot.scenes.includes(s.id)).map(s => `<option>${s.name}</option>`).join('')}
-            </select>
+            <div class="form-checkbox-group">
+                ${appData.assets.scenes.map((scene, i) => `
+                    <label class="form-checkbox-item">
+                        <input type="checkbox" name="scenesCheckbox" value="${scene.id}" data-scene-id="${scene.id}" ${currentShot.scenes.includes(scene.id) ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
+                        <span>${scene.name}</span>
+                    </label>
+                `).join('')}
+            </div>
         </div>
     `;
 
@@ -1353,7 +1489,7 @@ function renderConfigForm() {
             <div class="form-checkbox-group">
                 ${appData.assets.props.map((p, i) => `
                     <label class="form-checkbox-item">
-                        <input type="checkbox" ${currentShot.props.includes(p.id) ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
+                        <input type="checkbox" name="propsCheckbox" value="${p.id}" data-prop-id="${p.id}" ${currentShot.props.includes(p.id) ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
                         <span>${p.name}</span>
                     </label>
                 `).join('')}
@@ -1368,10 +1504,10 @@ function renderConfigForm() {
     form.innerHTML += `
         <div class="form-group">
             <label class="form-label">🎨 风格绑定</label>
-            <select class="form-select" ${isReadonly ? 'disabled' : ''}>
-                <option>${styleDisplay}</option>
+            <select class="form-select" name="styleSelect" data-current-id="${currentShot.style || ''}" ${isReadonly ? 'disabled' : ''}>
+                <option value="">${styleDisplay}</option>
                 ${appData.assets.styles.filter(s => s.id !== currentShot.style).map((s, i) => `
-                    <option>${s.name}</option>
+                    <option value="${s.id}">${s.name}</option>
                 `).join('')}
             </select>
         </div>
@@ -1381,7 +1517,7 @@ function renderConfigForm() {
     form.innerHTML += `
         <div class="form-group">
             <label class="form-checkbox-item">
-                <input type="checkbox" ${currentShot.refPrevShot ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
+                <input type="checkbox" name="refPrevShotCheckbox" ${currentShot.refPrevShot ? 'checked' : ''} ${isReadonly ? 'disabled' : ''}>
                 <span>参考上一分镜尾帧</span>
             </label>
         </div>

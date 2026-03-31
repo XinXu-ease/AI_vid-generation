@@ -634,6 +634,22 @@ body {
     font-weight: 700;
 }
 
+.shot-list-add-btn {
+    background: linear-gradient(135deg, #A7C957 0%, #8fb545 100%);
+    border-color: #8fb545 !important;
+    color: #ffffff;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shot-list-add-btn:hover {
+    background: linear-gradient(135deg, #8fb545 0%, #7da845 100%);
+    border-color: #6A994E !important;
+    box-shadow: 0 4px 12px rgba(167, 201, 87, 0.3);
+}
+
 /* 配置表单 */
 .config-form {
     display: flex;
@@ -820,6 +836,15 @@ body {
 
 .btn-secondary:hover {
     background: #d5d0c7;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: #ffffff;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
 }
 
 .btn-generate,
