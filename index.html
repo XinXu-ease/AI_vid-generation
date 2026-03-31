@@ -3,220 +3,411 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 视频生成控制工作台</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>AI 视频生成工作室 - 项目仪表板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #F2E8CF;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #6A994E 0%, #386641 100%);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logo-text h1 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .logo-text p {
+            margin: 0;
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        /* 仪表板容器 */
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .dashboard-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2a2a2a;
+            margin-bottom: 4px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 20px;
+        }
+
+        /* 项目网格 */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        /* 项目卡片 */
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            border: 2px solid transparent;
+        }
+
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-color: #A7C957;
+        }
+
+        .project-card-image {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #A7C957 0%, #6A994E 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+
+        .project-card-content {
+            padding: 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .project-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2a2a2a;
+            margin-bottom: 6px;
+        }
+
+        .project-card-meta {
+            display: flex;
+            gap: 8px;
+            font-size: 11px;
+            color: #666666;
+            margin-bottom: 8px;
+        }
+
+        .project-card-meta span {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .project-card-desc {
+            font-size: 12px;
+            color: #666666;
+            line-height: 1.4;
+            margin-bottom: auto;
+            min-height: 30px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .project-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #e0ddd5;
+            margin-top: 10px;
+        }
+
+        .project-stats {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .stat-item {
+            color: #666666;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: #A7C957;
+        }
+
+        .project-btn {
+            background-color: #A7C957;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .project-btn:hover {
+            background-color: #95b84e;
+            transform: scale(1.05);
+        }
+
+        .project-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* 新建项目卡片 */
+        .create-project-card {
+            background: #fdfaf0;
+            border: 2px dashed #e0ddd5;
+            border-radius: 12px;
+            padding: 20px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .create-project-card:hover {
+            border-color: #A7C957;
+            background: #f5f0e8;
+        }
+
+        .create-icon {
+            font-size: 36px;
+            margin-bottom: 8px;
+        }
+
+        .create-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2a2a2a;
+            text-align: center;
+        }
+
+        .create-subtext {
+            font-size: 11px;
+            color: #666666;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: white;
+            border-top: 1px solid #e0ddd5;
+            padding: 16px 20px;
+            margin-top: auto;
+            text-align: center;
+            color: #666666;
+            font-size: 12px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 1400px) {
+            .projects-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .projects-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .projects-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .dashboard-container {
+                padding: 0 12px;
+            }
+
+            .dashboard-title {
+                font-size: 22px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- 侧边栏导航 -->
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                <div>
-                    <h1>视频工作台</h1>
-                    <span class="project-title">午后的相遇</span>
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div style="font-size: 24px;">🎬</div>
+                <div class="logo-text">
+                    <h1>AI 视频创作工作室</h1>
+                    <p>智能短剧生成平台</p>
                 </div>
-                <button id="sidebarToggle" class="sidebar-toggle" onclick="toggleSidebar()">
-                    <span class="toggle-icon">◀</span>
-                </button>
+            </div>
+            <div style="color: white; font-size: 12px;">v1.0 Demo</div>
+        </div>
+    </header>
+
+    <!-- 主内容 -->
+    <main>
+        <div class="dashboard-container">
+        <h2 class="dashboard-title">我的项目</h2>
+        <p class="dashboard-subtitle">选择或创建一个项目开始编辑短剧内容</p>
+
+        <!-- 项目网格 -->
+        <div class="projects-grid">
+            <!-- 项目1: 午后的相遇 -->
+            <div class="project-card" style="cursor: default;">
+                <div class="project-card-image">🌙</div>
+                <div class="project-card-content">
+                    <div class="project-card-title">午后的相遇</div>
+                    <div class="project-card-meta">
+                        <span>⏱️ 5分钟</span>
+                        <span>爱情/治愈</span>
+                    </div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 8px;">2026-03-28 创建</div>
+                    <p class="project-card-desc">
+                        一个关于遗憾、错过与重逢的微型故事。在一个寻常的午后，两个错过彼此的人在咖啡馆相遇，却在最后一刻再次错过。
+                    </p>
+                    <div class="project-card-footer">
+                        <div class="project-stats">
+                            <div class="stat-item">分镜: <span class="stat-value">5</span></div>
+                            <div class="stat-item">进度: <span class="stat-value">40%</span></div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="project-btn" onclick="goToProject('index.html')" style="flex: 1;">⚙️ 编辑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目2: 城市夜幕 -->
+            <div class="project-card" style="cursor: default;">
+                <div class="project-card-image">🌃</div>
+                <div class="project-card-content">
+                    <div class="project-card-title">城市夜幕</div>
+                    <div class="project-card-meta">
+                        <span>⏱️ 3分钟</span>
+                        <span>悬疑/剧情</span>
+                    </div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 8px;">2026-03-25 创建</div>
+                    <p class="project-card-desc">
+                        在繁华的都市夜景中，一个秘密逐渐浮出水面。几个陌生人的命运在这个夜晚交织在一起。
+                    </p>
+                    <div class="project-card-footer">
+                        <div class="project-stats">
+                            <div class="stat-item">分镜: <span class="stat-value">4</span></div>
+                            <div class="stat-item">进度: <span class="stat-value">0%</span></div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="project-btn" onclick="goToProject('index.html')" style="flex: 1;">⚙️ 编辑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目3: 春日回忆 -->
+            <div class="project-card" style="cursor: default;">
+                <div class="project-card-image">🌸</div>
+                <div class="project-card-content">
+                    <div class="project-card-title">春日回忆</div>
+                    <div class="project-card-meta">
+                        <span>⏱️ 4分钟</span>
+                        <span>青春/校园</span>
+                    </div>
+                    <div style="font-size: 11px; color: #999; margin-bottom: 8px;">2026-03-20 创建</div>
+                    <p class="project-card-desc">
+                        校园食堂的一个角落，承载了多少青春的梦想和遗憾。当时光轮转，那些记忆又重新闪现。
+                    </p>
+                    <div class="project-card-footer">
+                        <div class="project-stats">
+                            <div class="stat-item">分镜: <span class="stat-value">6</span></div>
+                            <div class="stat-item">进度: <span class="stat-value">0%</span></div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="project-btn" onclick="goToProject('index.html')" style="flex: 1;">⚙️ 编辑</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 创建新项目卡片 -->
+            <div class="create-project-card" onclick="alert('新建项目功能即将上线...')">
+                <div class="create-icon">➕</div>
+                <div class="create-text">创建新项目</div>
+                <div class="create-subtext">开始一个全新的创意故事</div>
             </div>
         </div>
-        <nav class="sidebar-nav">
-            <button class="nav-btn active" data-page="overview">
-                <span class="nav-icon">📋</span>
-                <span>项目总览</span>
-            </button>
-            <button class="nav-btn" data-page="assets">
-                <span class="nav-icon">🎬</span>
-                <span>固定资产库</span>
-            </button>
-            <button class="nav-btn" data-page="control">
-                <span class="nav-icon">⚙️</span>
-                <span>分镜生成</span>
-            </button>
-        </nav>
-        <div style="padding: 16px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1);">
-            <button onclick="window.location.href='dashboard.html'" style="width: 100%; padding: 10px 16px; background-color: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
-                <span style="margin-right: 8px;">📚</span>返回项目库
-            </button>
         </div>
-        <div class="sidebar-footer">
-            <span class="version">v1.0 Demo</span>
-        </div>
-    </aside>
-
-    <!-- 主内容区 -->
-    <main class="main-content">
-        <!-- 页面1：项目总览 -->
-        <section id="overview-page" class="page active">
-            <div class="page-header">
-                <h2>项目总览 / 剧集工作台</h2>
-                <p class="subtitle">完整的分镜配置与状态管理</p>
-            </div>
-
-            <div class="overview-container">
-                <!-- 剧集信息卡 -->
-                <div class="episode-info-card">
-                    <div class="episode-header">
-                        <h3 id="episodeTitle">午后的相遇</h3>
-                        <span class="episode-meta">5分钟 | 爱情/治愈</span>
-                    </div>
-                    <p id="episodeSummary" class="episode-summary"></p>
-                    <div class="episode-stats">
-                        <div class="stat">
-                            <span class="stat-label">总分镜数</span>
-                            <span class="stat-value" id="totalShots">5</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">已生成</span>
-                            <span class="stat-value" id="completedShots">5</span>
-                        </div>
-                        <div class="stat">
-                            <span class="stat-label">完成度</span>
-                            <span class="stat-value" id="completionRate">100%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 分镜时间线 -->
-                <div class="timeline-section">
-                    <h3>分镜时间线</h3>
-                    <div class="timeline" id="overviewTimeline"></div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 页面2：固定资产库 -->
-        <section id="assets-page" class="page">
-            <div class="page-header">
-                <h2>固定资产库</h2>
-                <p class="subtitle">角色、场景、道具、风格的统一管理</p>
-            </div>
-
-            <div class="assets-container">
-                <!-- 资产分类标签页 -->
-                <div class="assets-tabs">
-                    <button class="asset-tab active" data-asset-type="characters">👤 角色</button>
-                    <button class="asset-tab" data-asset-type="scenes">🏞️ 场景</button>
-                    <button class="asset-tab" data-asset-type="props">🎁 道具</button>
-                    <button class="asset-tab" data-asset-type="styles">🎨 风格</button>
-                </div>
-
-                <!-- 资产卡片容器 -->
-                <div class="assets-grid-wrapper">
-                    <div id="assetsGrid" class="assets-grid"></div>
-                </div>
-            </div>
-
-            <!-- 资产编辑弹窗 -->
-            <div id="assetEditModal" class="modal" style="display: none;">
-                <div class="modal-content asset-edit-modal-content">
-                    <div class="modal-header">
-                        <h3 id="assetEditTitle" class="asset-title-editable asset-title-display" ondblclick="editAssetTitle()">资产名称</h3>
-                        <input type="text" id="assetEditTitleInput" class="asset-title-input asset-title-input-control" onblur="saveAssetTitle()" onkeydown="if(event.key==='Enter') saveAssetTitle()">
-                        <button class="modal-close" onclick="closeAssetEditModal()">&times;</button>
-                    </div>
-
-                    <div class="modal-body">
-                        <!-- 说明 (必需) -->
-                        <div class="form-group">
-                            <label>说明 <span style="color: #A7C957;">*</span></label>
-                            <textarea id="assetEditDescription" class="form-control" rows="3"></textarea>
-                        </div>
-
-                        <!-- 属性列表 -->
-                        <div class="form-group" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #e0ddd5;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                                <label style="margin: 0; font-weight: 600;">其他属性</label>
-                                <button class="btn-add-attr" onclick="addAttributeField()">+ 添加属性</button>
-                            </div>
-                            <div id="assetExtraAttributes" class="asset-extra-attributes">
-                                <!-- 动态加载额外属性 -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal-footer">
-                        <button class="btn btn-danger" onclick="deleteAsset()" style="margin-right: auto;">🗑️ 删除</button>
-                        <button class="btn btn-secondary" onclick="closeAssetEditModal()">关闭</button>
-                        <button class="btn btn-primary" onclick="saveAssetEdit()">保存</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 页面3：分镜结构化控制 -->
-        <section id="control-page" class="page">
-            <div class="page-header">
-                <h2>分镜生成</h2>
-                <p class="subtitle">核心编辑界面</p>
-            </div>
-
-            <div class="control-layout">
-                <!-- 左侧：分镜列表 -->
-                <div class="control-left">
-                    <h3>分镜列表</h3>
-                    <div id="controlShotList" class="shot-list"></div>
-                </div>
-
-                <!-- 中间：配置表单 -->
-                <div class="control-middle">
-                    <div class="form-header">
-                        <h3>分镜配置</h3>
-                        <button id="editModeToggle" class="btn-edit-toggle">✏️ 编辑</button>
-                    </div>
-                    <div id="configForm" class="config-form">
-                        <!-- 动态加载表单内容 -->
-                    </div>
-                </div>
-
-                <!-- 右侧：预览区 -->
-                <div class="control-right">
-                    <div class="preview-section">
-                        <h3>生成预览</h3>
-                        <div id="previewArea" class="preview-area">
-                            <div class="preview-placeholder">选择分镜查看预览</div>
-                        </div>
-                        <button id="generateBtn" class="btn-generate" style="display:none;">
-                            🚀 生成分镜
-                        </button>
-                    </div>
-
-                    <!-- 版本历史 -->
-                    <div class="history-section">
-                        <h3>版本历史</h3>
-                        <div id="versionHistory" class="version-history">
-                            <p class="placeholder-text">暂无版本</p>
-                        </div>
-                        <button id="regenBtn" class="btn-regen" style="display:none;">
-                            🔄 局部重生成
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
     </main>
 
-    <!-- 模态框：一致性提醒 -->
-    <div id="consistencyModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <h3>⚠️ 连续性检查</h3>
-            <p id="consistencyMessage"></p>
-            <div class="modal-actions">
-                <button id="continueBtn" class="btn btn-primary">继续</button>
-                <button id="cancelBtn" class="btn btn-secondary">取消</button>
-            </div>
-        </div>
-    </div>
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>© 2026 AI 视频创作工作室 | v1.0 Demo | 智能短剧生成平台</p>
+    </footer>
 
-    <!-- 模态框：生成加载 -->
-    <div id="loadingModal" class="modal" style="display:none;">
-        <div class="modal-content loading-modal">
-            <div class="spinner"></div>
-            <p>AI 正在生成分镜...</p>
-            <span class="loading-subtitle">这通常需要 30-60 秒</span>
-        </div>
-    </div>
-
-    <script src="app.js"></script>
+    <script>
+        function goToProject(url) {
+            window.location.href = url;
+        }
+    </script>
 </body>
 </html>

@@ -1217,7 +1217,7 @@ function addNewShot() {
     const newShotNumber = maxShotNumber + 1;
     const newShotId = `shot_${String(newShotNumber).padStart(3, '0')}`;
     
-    // 创建新分镜对象
+    // 创建新分镜对象（带有新分镜标记）
     const newShot = {
         shotId: newShotId,
         shotNumber: newShotNumber,
@@ -1236,18 +1236,18 @@ function addNewShot() {
         status: 'pending',
         versions: [],
         editable: true,
-        lastModified: new Date().toISOString()
+        lastModified: new Date().toISOString(),
+        isNew: true  // 标记为新建分镜
     };
     
-    // 添加到项目中
+    // 仅添加到内存，不保存到localStorage
     appData.project.shots.push(newShot);
-    DataManager.save();
     
     // 切换到新分镜并进入编辑模式
     appData.currentShotId = newShotId;
     appData.editingMode = true;
     
-    console.log('✅ 新分镜已创建：', newShotId);
+    console.log('✅ 新分镜已创建（未保存）：', newShotId);
     
     // 重新渲染所有页面
     renderOverviewPage();
@@ -1351,6 +1351,15 @@ function saveChanges(currentShot) {
 
     console.log('保存数据:', updates);
 
+    // 如果是新分镜，需要先清除isNew标记并确保已添加到shots数组
+    if (currentShot.isNew) {
+        const existingShot = appData.project.shots.find(s => s.shotId === appData.currentShotId);
+        if (existingShot) {
+            delete existingShot.isNew;  // 移除新建标记
+        }
+        console.log('✅ 新分镜已确认保存');
+    }
+
     // 更新数据到内存 + localStorage
     DataManager.updateShot(appData.currentShotId, updates);
 
@@ -1374,6 +1383,52 @@ function saveChanges(currentShot) {
     renderPreview();
     renderControlPage(); // 重新渲染以更新按钮状态
     renderOverviewPage(); // 刷新总览页
+}
+
+// ============ 删除分镜 ============
+
+/**
+ * 删除当前分镜
+ */
+function deleteShot() {
+    const currentShot = DataManager.getShot(appData.currentShotId);
+    if (!currentShot) {
+        alert('❌ 无法删除：未选中分镜');
+        return;
+    }
+
+    const shotTitle = currentShot.title || '未命名分镜';
+    const confirmed = confirm(`确定要删除"${shotTitle}"吗？\n\n此操作不可撤销！`);
+    if (!confirmed) return;
+
+    // 从shots数组中删除
+    const shotIndex = appData.project.shots.findIndex(s => s.shotId === appData.currentShotId);
+    if (shotIndex > -1) {
+        appData.project.shots.splice(shotIndex, 1);
+        console.log('✅ 分镜已从数组中删除:', appData.currentShotId);
+    }
+
+    // 保存到localStorage
+    DataManager.save();
+
+    // 选择新的分镜（前一个或后一个）
+    const allShots = DataManager.getAllShots();
+    if (allShots.length > 0) {
+        // 如果有剩余分镜，选择前一个或第一个
+        appData.currentShotId = allShots[Math.max(0, shotIndex - 1)].shotId;
+    } else {
+        // 如果没有分镜了，清空
+        appData.currentShotId = null;
+    }
+
+    appData.editingMode = false;
+
+    console.log('✅ 分镜已成功删除:', shotTitle);
+    alert(`✅ "${shotTitle}"已成功删除！`);
+
+    // 重新渲染所有页面
+    renderOverviewPage();
+    renderControlPage();
 }
 
 function renderConfigForm() {
@@ -1563,11 +1618,14 @@ function renderConfigForm() {
         </div>
     `;
 
-    // 生成或重生成按钮 - 只在当前分镜编辑模式时显示
+    // 按钮组 - 编辑模式时显示
     if (!isReadonly) {
-        const btnText = currentShot.status === 'completed' ? '🔄 重新生成' : '🚀 生成分镜';
+        const btnText = currentShot.status === 'completed' ? '重新生成' : '生成分镜';
         form.innerHTML += `
-            <button id="generateBtn" class="btn-generate">${btnText}</button>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <button id="deleteShotBtn" style="background: transparent; border: 1.5px dashed #e74c3c; cursor: pointer; padding: 12px 16px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; border-radius: 6px; color: #e74c3c;" title="删除分镜">🗑️ 删除</button>
+                <button id="generateBtn" class="btn-generate" style="flex: 1; margin-top: 0;">${btnText}</button>
+            </div>
         `;
 
         // 添加生成按钮事件
@@ -1578,7 +1636,51 @@ function renderConfigForm() {
                     generateShot(currentShot);
                 });
             }
+            
+            // 添加删除按钮事件和hover效果
+            const delBtn = document.getElementById('deleteShotBtn');
+            if (delBtn) {
+                delBtn.addEventListener('click', deleteShot);
+                delBtn.addEventListener('mouseenter', function() {
+                    this.style.background = 'rgba(231, 76, 60, 0.1)';
+                    this.style.borderColor = '#c0392b';
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 8px 16px rgba(231, 76, 60, 0.2)';
+                });
+                delBtn.addEventListener('mouseleave', function() {
+                    this.style.background = 'transparent';
+                    this.style.borderColor = '#e74c3c';
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            }
         }, 0);
+    } else {
+        // 非编辑模式时只显示删除按钮（如果有权限）
+        if (currentShot.editable) {
+            form.innerHTML += `
+                <button id="deleteShotBtn" style="background: transparent; border: 1.5px dashed #e74c3c; cursor: pointer; padding: 12px 16px; font-size: 13px; font-weight: 600; transition: all 0.3s ease; border-radius: 6px; color: #e74c3c; margin-top: 12px;" title="删除分镜">🗑️ 删除</button>
+            `;
+            
+            setTimeout(() => {
+                const delBtn = document.getElementById('deleteShotBtn');
+                if (delBtn) {
+                    delBtn.addEventListener('click', deleteShot);
+                    delBtn.addEventListener('mouseenter', function() {
+                        this.style.background = 'rgba(231, 76, 60, 0.1)';
+                        this.style.borderColor = '#c0392b';
+                        this.style.transform = 'translateY(-2px)';
+                        this.style.boxShadow = '0 8px 16px rgba(231, 76, 60, 0.2)';
+                    });
+                    delBtn.addEventListener('mouseleave', function() {
+                        this.style.background = 'transparent';
+                        this.style.borderColor = '#e74c3c';
+                        this.style.transform = 'translateY(0)';
+                        this.style.boxShadow = 'none';
+                    });
+                }
+            }, 0);
+        }
     }
 
     // 添加滑条变化事件
